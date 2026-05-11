@@ -1,0 +1,1814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nuskhe — The Courtyard Knew</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,500;1,400&family=Kalam:wght@300;400&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js"></script>
+  <style>
+    /* ============ RESET & ROOT ============ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream:        #f5ede0;
+      --sepia-dark:   #3b2a1a;
+      --sepia-mid:    #7a5c3a;
+      --sepia-light:  #c9a97a;
+      --green-deep:   #2d4a2d;
+      --green-mid:    #4a7c59;
+      --green-light:  #8fbc8f;
+      --terracotta:   #c1440e;
+      --terra-soft:   #e8875a;
+      --blue-cold:    #1a2a4a;
+      --blue-mid:     #2e4a7a;
+      --gold:         #d4a017;
+      --ghost:        rgba(245,237,224,0.08);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Lora', serif;
+      background: var(--cream);
+      color: var(--sepia-dark);
+      cursor: none;
+      overflow-x: hidden;
+    }
+
+    /* ============ CURSOR WILTING (extinct bubbles) ============ */
+    #cy-cursor.wilting svg {
+      animation: leafWilt 0.6s ease forwards;
+    }
+    @keyframes leafWilt {
+      0%   { transform: rotate(-10deg); }
+      50%  { transform: rotate(30deg) scaleY(0.7); }
+      100% { transform: rotate(20deg) scaleY(0.5); opacity: 0.5; }
+    }
+
+    /* ============ SOUND TOGGLE ============ */
+    #soundToggle {
+      position: fixed;
+      top: 1.5rem;
+      right: 1.5rem;
+      z-index: 1000;
+      background: rgba(245,237,224,0.85);
+      border: 1px solid var(--sepia-light);
+      color: var(--sepia-dark);
+      font-family: 'Kalam', cursive;
+      font-size: 0.85rem;
+      padding: 0.4rem 0.9rem;
+      border-radius: 20px;
+      cursor: none;
+      backdrop-filter: blur(6px);
+      transition: background 0.3s;
+    }
+    #soundToggle:hover { background: rgba(245,237,224,1); }
+
+    /* ============ SCORE BADGE ============ */
+    #scoreBadge {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 1.5rem;
+      z-index: 1000;
+      background: var(--sepia-dark);
+      color: var(--cream);
+      font-family: 'Kalam', cursive;
+      font-size: 0.8rem;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.6s, transform 0.6s;
+      line-height: 1.4;
+      max-width: 200px;
+      text-align: center;
+    }
+    #scoreBadge.visible { opacity: 1; transform: translateY(0); }
+
+    /* ============================================================
+       FRAME 1 — THE COURTYARD (Night Scene)
+    ============================================================ */
+    #frame-courtyard {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+      background: #0d1a0d;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: none;
+    }
+
+    .cy-sky {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg,
+        #060e06 0%, #0d1a0d 35%, #1a2e1a 60%, #2a1f0e 80%, #3d2a12 100%
+      );
+    }
+
+    .cy-stars { position: absolute; inset: 0; pointer-events: none; }
+    .cy-star {
+      position: absolute;
+      width: 2px; height: 2px;
+      background: rgba(255,245,220,0.7);
+      border-radius: 50%;
+      animation: starTwinkle var(--dur, 3s) ease-in-out infinite var(--delay, 0s);
+    }
+    @keyframes starTwinkle {
+      0%,100% { opacity: 0.3; transform: scale(1); }
+      50%     { opacity: 1;   transform: scale(1.4); }
+    }
+
+    .cy-trees-bg {
+      position: absolute; bottom: 28%; left: 0; right: 0; height: 55%;
+      pointer-events: none;
+    }
+
+    .cy-wall {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 30%;
+      background: linear-gradient(180deg, #3d2a12 0%, #5c3d1a 40%, #7a5228 100%);
+      border-top: 3px solid #8b6520;
+    }
+    .cy-wall::before {
+      content: ''; position: absolute; inset: 0;
+      background: repeating-linear-gradient(90deg, rgba(0,0,0,0.08) 0px, rgba(0,0,0,0.08) 1px, transparent 1px, transparent 40px),
+      repeating-linear-gradient(0deg, rgba(0,0,0,0.06) 0px, rgba(0,0,0,0.06) 1px, transparent 1px, transparent 20px);
+    }
+
+    .cy-ground {
+      position: absolute; bottom: 28%; left: 0; right: 0; height: 4px;
+      background: linear-gradient(90deg, transparent, #8b6520 20%, #8b6520 80%, transparent);
+    }
+
+    /* Silhouette snap targets */
+    .cy-silhouette {
+      position: absolute; bottom: 28%;
+      opacity: 0.18; pointer-events: none;
+      transition: opacity 0.5s ease, filter 0.5s ease;
+      filter: brightness(0) invert(1);
+    }
+    .cy-silhouette.filled { opacity: 0; }
+    .cy-silhouette.glow-hint {
+      opacity: 0.35;
+      filter: brightness(0.6) sepia(1) saturate(3) hue-rotate(60deg);
+      animation: silhouettePulse 2s ease-in-out infinite;
+    }
+    @keyframes silhouettePulse {
+      0%,100% { opacity: 0.25; }
+      50%     { opacity: 0.5; }
+    }
+
+    /* Draggable plants */
+    .cy-plant {
+      position: absolute; cursor: none; user-select: none;
+      transition: filter 0.2s, transform 0.2s;
+      z-index: 30; touch-action: none;
+    }
+    .cy-plant:hover { filter: brightness(1.15); }
+    .cy-plant.dragging {
+      z-index: 100;
+      filter: drop-shadow(0 0 18px rgba(143,188,100,0.55));
+      transform: scale(1.06);
+    }
+    .cy-plant.snapped {
+      transition: left 0.4s cubic-bezier(0.34,1.56,0.64,1),
+                  top  0.4s cubic-bezier(0.34,1.56,0.64,1),
+                  transform 0.4s;
+      pointer-events: none;
+    }
+
+    .cy-drag-hint {
+      position: absolute; bottom: 38%; left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Kalam', cursive; font-size: 0.85rem;
+      color: rgba(255,245,220,0.45); letter-spacing: 0.1em;
+      pointer-events: none; z-index: 20; text-align: center;
+      animation: hintPulse 3s ease-in-out infinite;
+    }
+    @keyframes hintPulse {
+      0%,100% { opacity: 0.4; transform: translateX(-50%) translateY(0); }
+      50%     { opacity: 0.8; transform: translateX(-50%) translateY(-5px); }
+    }
+    .cy-drag-hint.hidden { opacity: 0; pointer-events: none; }
+
+    /* Hero text */
+    .cy-hero {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center; z-index: 40; pointer-events: none;
+    }
+    .cy-site-name {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(0.85rem, 1.5vw, 1rem);
+      letter-spacing: 0.5em;
+      color: rgba(255,245,220,0.5);
+      text-transform: uppercase;
+      margin-bottom: 1.5rem; display: block;
+      opacity: 0; transition: opacity 1s ease 0.2s;
+    }
+    .cy-hero-line {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.6rem, 4.5vw, 3.5rem);
+      font-style: italic;
+      color: rgba(255,245,220,0);
+      display: block; line-height: 1.3;
+      transition: color 0.8s ease, text-shadow 0.8s ease;
+    }
+    .cy-hero-line.word-revealed {
+      color: rgba(255,245,220,0.92);
+      text-shadow: 0 0 40px rgba(143,188,100,0.3);
+    }
+    .cy-hero-sub {
+      font-family: 'Lora', serif;
+      font-size: clamp(0.85rem, 1.5vw, 1rem);
+      color: rgba(255,245,220,0);
+      font-style: italic; margin-top: 1rem; display: block;
+      transition: color 1.2s ease;
+    }
+    .cy-hero-sub.revealed { color: rgba(255,245,220,0.55); }
+
+    .cy-scroll-cue {
+      position: absolute; bottom: 2rem; left: 50%;
+      transform: translateX(-50%); z-index: 40;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 0.4rem; color: rgba(255,245,220,0.4);
+      font-family: 'Kalam', cursive; font-size: 0.8rem;
+      opacity: 0; transition: opacity 1s ease;
+      animation: scrollCueBob 3s ease-in-out infinite;
+    }
+    .cy-scroll-cue.visible { opacity: 1; }
+    @keyframes scrollCueBob {
+      0%,100% { transform: translateX(-50%) translateY(0); }
+      50%     { transform: translateX(-50%) translateY(-6px); }
+    }
+    .cy-scroll-leaf { font-size: 1.2rem; display: block; }
+
+    #leafBurstCanvas {
+      position: fixed; inset: 0;
+      pointer-events: none; z-index: 9998;
+    }
+
+    #cy-cursor {
+      position: fixed; width: 28px; height: 36px;
+      pointer-events: none; z-index: 9999;
+      transform: translate(-50%, -100%);
+      transition: transform 0.05s linear;
+    }
+    #cy-cursor svg {
+      width: 100%; height: 100%;
+      animation: cursorSway 4s ease-in-out infinite;
+      filter: drop-shadow(0 2px 4px rgba(45,74,45,0.5));
+    }
+    @keyframes cursorSway {
+      0%,100% { transform: rotate(-8deg); }
+      50%     { transform: rotate(8deg); }
+    }
+
+    /* ============================================================
+       FRAME 1.5 — QUIZ (GENERATION SELECTOR)
+    ============================================================ */
+    #frame-quiz {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(160deg, #f5ede0 0%, #e8d5b8 100%);
+      padding: 4rem 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+    #frame-quiz::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle at 20% 80%, rgba(193,68,14,0.06) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 20%, rgba(45,74,45,0.06) 0%, transparent 50%);
+    }
+
+    .quiz-eyebrow {
+      font-family: 'Kalam', cursive;
+      font-size: 1rem;
+      color: var(--sepia-mid);
+      letter-spacing: 0.15em;
+      margin-bottom: 1rem;
+      opacity: 0;
+      animation: fadeUp 0.8s ease forwards 0.2s;
+    }
+    .quiz-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      color: var(--sepia-dark);
+      text-align: center;
+      margin-bottom: 0.5rem;
+      opacity: 0;
+      animation: fadeUp 0.8s ease forwards 0.4s;
+    }
+    .quiz-sub {
+      font-family: 'Lora', serif;
+      font-size: 1rem;
+      color: var(--sepia-mid);
+      font-style: italic;
+      text-align: center;
+      margin-bottom: 3rem;
+      opacity: 0;
+      animation: fadeUp 0.8s ease forwards 0.6s;
+    }
+
+    .quiz-cards {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      opacity: 0;
+      animation: fadeUp 0.8s ease forwards 0.8s;
+    }
+
+    .quiz-card {
+      width: 200px;
+      padding: 2.5rem 1.5rem;
+      border: 2px solid var(--sepia-light);
+      border-radius: 4px;
+      background: rgba(245,237,224,0.8);
+      text-align: center;
+      cursor: none;
+      transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s, background 0.3s;
+      position: relative;
+      backdrop-filter: blur(4px);
+    }
+    .quiz-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 40px rgba(59,42,26,0.15);
+      border-color: var(--sepia-dark);
+    }
+    .quiz-card.selected {
+      background: var(--sepia-dark);
+      color: var(--cream);
+      border-color: var(--sepia-dark);
+      transform: translateY(-8px);
+    }
+    .quiz-card.selected .quiz-card-era,
+    .quiz-card.selected .quiz-card-years,
+    .quiz-card.selected .quiz-card-lost { color: var(--cream); }
+
+    .quiz-card-icon { font-size: 2.5rem; margin-bottom: 1rem; display: block; }
+    .quiz-card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      font-style: italic;
+      color: var(--sepia-dark);
+      margin-bottom: 0.3rem;
+    }
+    .quiz-card-era {
+      font-family: 'Kalam', cursive;
+      font-size: 0.75rem;
+      color: var(--sepia-mid);
+      display: block;
+      margin-bottom: 0.8rem;
+    }
+    .quiz-card-years {
+      font-family: 'Lora', serif;
+      font-size: 0.8rem;
+      color: var(--sepia-mid);
+      font-style: italic;
+    }
+    .quiz-card-lost {
+      display: none;
+      font-family: 'Kalam', cursive;
+      font-size: 0.85rem;
+      color: var(--terracotta);
+      margin-top: 0.8rem;
+    }
+    .quiz-card.selected .quiz-card-lost { display: block; color: var(--terra-soft); }
+    .quiz-card.selected .quiz-card-title { color: var(--cream); }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ============================================================
+       FRAME 2 — TIMELINE BUBBLE PLOT
+    ============================================================ */
+    #frame-timeline {
+      min-height: 100vh;
+      background: linear-gradient(180deg, #e8d5b8 0%, #d4c4a0 30%, #2d3a2d 100%);
+      padding: 6rem 2rem 4rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .timeline-header {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+    .timeline-eyebrow {
+      font-family: 'Kalam', cursive;
+      font-size: 0.9rem;
+      color: var(--sepia-mid);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+    .timeline-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      color: var(--sepia-dark);
+    }
+    .timeline-counter {
+      display: inline-block;
+      margin-top: 1rem;
+      font-family: 'Kalam', cursive;
+      font-size: 1.1rem;
+      color: var(--terracotta);
+      background: rgba(193,68,14,0.08);
+      padding: 0.4rem 1.2rem;
+      border-radius: 20px;
+      border: 1px solid rgba(193,68,14,0.2);
+    }
+    #extinctCount { font-weight: bold; font-size: 1.4rem; }
+
+    /* Generation lanes */
+    .gen-lanes {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      max-width: 1000px;
+      margin: 0 auto;
+      position: relative;
+    }
+    .gen-lane {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 2rem 0;
+      border-bottom: 1px dashed rgba(122,92,58,0.25);
+      position: relative;
+      transition: opacity 0.5s;
+    }
+    .gen-lane.dimmed { opacity: 0.35; }
+    .gen-lane.active { opacity: 1; }
+
+    .gen-label {
+      min-width: 120px;
+      text-align: right;
+    }
+    .gen-label-main {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-style: italic;
+      color: var(--sepia-dark);
+      display: block;
+    }
+    .gen-label-years {
+      font-family: 'Kalam', cursive;
+      font-size: 0.75rem;
+      color: var(--sepia-mid);
+    }
+
+    .gen-bubbles {
+      display: flex;
+      gap: 1.2rem;
+      flex-wrap: wrap;
+      align-items: center;
+      flex: 1;
+    }
+
+    .bubble {
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: none;
+      position: relative;
+      transition: transform 0.3s, box-shadow 0.3s;
+      flex-shrink: 0;
+    }
+    .bubble:hover { transform: scale(1.12); }
+    .bubble:hover .bubble-tooltip { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(-4px); }
+
+    .bubble-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+
+    /* Bubble sizes & opacities by generation */
+    .bubble-dadi   { background: radial-gradient(circle at 35% 35%, #8fbc8f, #4a7c59); box-shadow: 0 4px 16px rgba(74,124,89,0.4); }
+    .bubble-mom    { background: radial-gradient(circle at 35% 35%, #c9a97a, #7a5c3a); box-shadow: 0 4px 16px rgba(122,92,58,0.35); }
+    .bubble-us     { background: radial-gradient(circle at 35% 35%, #7a9abf, #2e4a7a); box-shadow: 0 4px 16px rgba(46,74,122,0.3); }
+    .bubble-extinct { background: radial-gradient(circle at 35% 35%, #ccc, #888); box-shadow: none; opacity: 0.25; }
+
+    .bubble-tooltip {
+      position: absolute;
+      bottom: 110%;
+      left: 50%;
+      transform: translateX(-50%) translateY(0);
+      background: rgba(245,237,224,0.97);
+      border: 1px solid var(--sepia-light);
+      border-radius: 8px;
+      padding: 0.8rem 1rem;
+      min-width: 180px;
+      text-align: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s, transform 0.3s;
+      z-index: 50;
+      box-shadow: 0 8px 24px rgba(59,42,26,0.15);
+    }
+    .bubble-tooltip-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.95rem;
+      font-style: italic;
+      color: var(--sepia-dark);
+      display: block;
+      margin-bottom: 0.3rem;
+    }
+    .bubble-tooltip-heals {
+      font-family: 'Kalam', cursive;
+      font-size: 0.75rem;
+      color: var(--sepia-mid);
+      display: block;
+      margin-bottom: 0.3rem;
+    }
+    .bubble-tooltip-quote {
+      font-family: 'Lora', serif;
+      font-size: 0.75rem;
+      color: var(--terracotta);
+      font-style: italic;
+    }
+    .extinct-marker {
+      font-size: 0.7rem;
+      color: #888;
+      font-family: 'Kalam', cursive;
+      margin-top: 0.3rem;
+      display: block;
+    }
+
+    /* Milestone stamps */
+    .milestone-row {
+      display: flex;
+      justify-content: space-around;
+      max-width: 1000px;
+      margin: 2rem auto 0;
+      padding: 0 140px;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .milestone-stamp {
+      background: rgba(245,237,224,0.15);
+      border: 1px solid rgba(245,237,224,0.3);
+      border-radius: 4px;
+      padding: 0.5rem 0.8rem;
+      text-align: center;
+      backdrop-filter: blur(4px);
+    }
+    .milestone-year {
+      font-family: 'Kalam', cursive;
+      font-size: 0.8rem;
+      color: var(--gold);
+      display: block;
+    }
+    .milestone-event {
+      font-family: 'Lora', serif;
+      font-size: 0.7rem;
+      color: rgba(245,237,224,0.75);
+      font-style: italic;
+    }
+
+    /* ============================================================
+       FRAME 3 — EASTER EGG CARD FLIP
+    ============================================================ */
+    #frame-cards {
+      min-height: 100vh;
+      background: linear-gradient(160deg, #1a1208 0%, #2d1f0e 60%, #3b2a1a 100%);
+      padding: 6rem 2rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    #frame-cards::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle at 50% 50%, rgba(212,160,23,0.04) 0%, transparent 70%);
+    }
+
+    .cards-eyebrow {
+      font-family: 'Kalam', cursive;
+      font-size: 0.9rem;
+      color: var(--sepia-light);
+      letter-spacing: 0.2em;
+      margin-bottom: 0.8rem;
+      opacity: 0.7;
+    }
+    .cards-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      color: var(--cream);
+      font-style: italic;
+      margin-bottom: 0.5rem;
+    }
+    .cards-sub {
+      font-family: 'Lora', serif;
+      font-size: 1rem;
+      color: rgba(245,237,224,0.55);
+      font-style: italic;
+      margin-bottom: 3.5rem;
+    }
+
+    .cards-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2rem;
+      justify-content: center;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /* 3D Flip Card */
+    .flip-card {
+      width: 180px;
+      height: 240px;
+      perspective: 1000px;
+      cursor: none;
+    }
+    .flip-card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+
+    .flip-card-front,
+    .flip-card-back {
+      position: absolute;
+      inset: 0;
+      border-radius: 8px;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .flip-card-front {
+      background: linear-gradient(135deg, #f5e8c8 0%, #e8d4a0 40%, #dcc890 100%);
+      border: 2px solid rgba(122,92,58,0.4);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.5);
+    }
+    .flip-card-front::before {
+      content: '';
+      position: absolute;
+      inset: 8px;
+      border: 1px dashed rgba(122,92,58,0.3);
+      border-radius: 4px;
+    }
+    .card-face-icon { font-size: 2.5rem; margin-bottom: 0.8rem; }
+    .card-face-label {
+      font-family: 'Kalam', cursive;
+      font-size: 0.8rem;
+      color: rgba(122,92,58,0.6);
+      text-align: center;
+    }
+    .card-face-tap {
+      position: absolute;
+      bottom: 1rem;
+      font-family: 'Kalam', cursive;
+      font-size: 0.7rem;
+      color: rgba(122,92,58,0.4);
+      font-style: italic;
+    }
+
+    .flip-card-back {
+      background: linear-gradient(135deg, #1a2a0a 0%, #2d4a1a 100%);
+      border: 2px solid var(--green-mid);
+      box-shadow: 0 0 30px rgba(143,188,143,0.25), 0 8px 32px rgba(0,0,0,0.5);
+      transform: rotateY(180deg);
+      text-align: center;
+      gap: 0.5rem;
+    }
+    .card-back-icon { font-size: 2rem; filter: drop-shadow(0 0 8px rgba(143,188,143,0.8)); }
+    .card-back-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.95rem;
+      font-style: italic;
+      color: var(--cream);
+    }
+    .card-back-heals {
+      font-family: 'Kalam', cursive;
+      font-size: 0.7rem;
+      color: var(--green-light);
+    }
+    .card-back-how {
+      font-family: 'Lora', serif;
+      font-size: 0.68rem;
+      color: rgba(245,237,224,0.65);
+      font-style: italic;
+      line-height: 1.4;
+    }
+    .card-back-gen {
+      font-family: 'Kalam', cursive;
+      font-size: 0.65rem;
+      color: var(--gold);
+      margin-top: 0.3rem;
+    }
+    .card-share-btn {
+      margin-top: 0.5rem;
+      background: rgba(143,188,143,0.2);
+      border: 1px solid var(--green-mid);
+      color: var(--green-light);
+      font-family: 'Kalam', cursive;
+      font-size: 0.65rem;
+      padding: 0.3rem 0.7rem;
+      border-radius: 12px;
+      cursor: none;
+      transition: background 0.2s;
+    }
+    .card-share-btn:hover { background: rgba(143,188,143,0.35); }
+
+    /* ============================================================
+       FRAME 4 — CONTRIBUTION / THANK YOU
+    ============================================================ */
+    #frame-contribution {
+      min-height: 100vh;
+      background: linear-gradient(160deg, #f5ede0 0%, #ede0cc 100%);
+      padding: 6rem 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .contrib-header { text-align: center; margin-bottom: 3rem; }
+    .contrib-eyebrow {
+      font-family: 'Kalam', cursive;
+      font-size: 0.9rem;
+      color: var(--sepia-mid);
+      letter-spacing: 0.2em;
+      margin-bottom: 0.8rem;
+    }
+    .contrib-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 4vw, 3rem);
+      color: var(--sepia-dark);
+      margin-bottom: 0.5rem;
+    }
+    .contrib-sub {
+      font-family: 'Lora', serif;
+      font-size: 1rem;
+      color: var(--sepia-mid);
+      font-style: italic;
+    }
+
+    .contrib-form {
+      width: 100%;
+      max-width: 560px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .form-label {
+      font-family: 'Kalam', cursive;
+      font-size: 0.85rem;
+      color: var(--sepia-mid);
+    }
+    .form-input,
+    .form-textarea {
+      font-family: 'Kalam', cursive;
+      font-size: 1rem;
+      color: var(--sepia-dark);
+      background: rgba(255,255,255,0.5);
+      border: none;
+      border-bottom: 2px solid var(--sepia-light);
+      padding: 0.6rem 0.4rem;
+      outline: none;
+      transition: border-color 0.3s;
+      cursor: none;
+      resize: none;
+    }
+    .form-input:focus,
+    .form-textarea:focus { border-bottom-color: var(--sepia-dark); }
+    .form-textarea { min-height: 80px; border: 1px solid var(--sepia-light); padding: 0.8rem; border-radius: 4px; }
+
+    .form-submit {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-style: italic;
+      color: var(--cream);
+      background: var(--sepia-dark);
+      border: none;
+      padding: 1rem 2.5rem;
+      border-radius: 4px;
+      cursor: none;
+      align-self: flex-start;
+      transition: background 0.3s, transform 0.2s;
+      letter-spacing: 0.05em;
+    }
+    .form-submit:hover { background: var(--sepia-mid); transform: translateY(-2px); }
+
+    /* Thank you message */
+    #thankYouMsg {
+      display: none;
+      text-align: center;
+      padding: 2rem;
+    }
+    #thankYouMsg.visible { display: block; }
+    .thankyou-icon { font-size: 3rem; margin-bottom: 1rem; }
+    .thankyou-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem;
+      font-style: italic;
+      color: var(--sepia-dark);
+      margin-bottom: 0.5rem;
+    }
+    .thankyou-body {
+      font-family: 'Lora', serif;
+      font-size: 1rem;
+      color: var(--sepia-mid);
+      font-style: italic;
+    }
+
+    /* Remedy Garden */
+    .garden-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      font-style: italic;
+      color: var(--sepia-dark);
+      text-align: center;
+      margin: 3rem 0 1.5rem;
+    }
+    .remedy-garden {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+      max-width: 700px;
+    }
+    .garden-tile {
+      background: rgba(255,255,255,0.6);
+      border: 1px solid var(--sepia-light);
+      border-radius: 8px;
+      padding: 0.8rem 1.2rem;
+      text-align: center;
+      animation: fadeUp 0.5s ease forwards;
+    }
+    .garden-tile-icon { font-size: 1.4rem; display: block; margin-bottom: 0.3rem; }
+    .garden-tile-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.85rem;
+      font-style: italic;
+      color: var(--sepia-dark);
+      display: block;
+    }
+    .garden-tile-person {
+      font-family: 'Kalam', cursive;
+      font-size: 0.7rem;
+      color: var(--sepia-mid);
+    }
+
+    /* ============ PARALLAX DIVIDER ============ */
+    .parallax-divider {
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--sepia-light), var(--sepia-dark), var(--sepia-light), transparent);
+      margin: 0;
+    }
+
+    /* ============ UTILITY ============ */
+    .section-divider {
+      width: 60px;
+      height: 2px;
+      background: var(--sepia-light);
+      margin: 1.5rem auto;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- CURSOR (leaf-shaped) -->
+  <div id="cy-cursor">
+    <svg viewBox="0 0 28 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M14 34 C14 34 2 23 2 14 C2 7.4 7.4 2 14 2 C20.6 2 26 7.4 26 14 C26 23 14 34 14 34Z" fill="#2d5a1a" opacity="0.92"/>
+      <path d="M14 34 C14 34 2 23 2 14" stroke="#4a8a2a" stroke-width="1.5" fill="none" opacity="0.6"/>
+      <path d="M14 5 C14 5 10 11 14 22 C18 11 14 5 14 5Z" fill="#7ab84a" opacity="0.65"/>
+      <path d="M8 10 C8 10 14 14 14 22" stroke="#5a9a30" stroke-width="1" fill="none" opacity="0.5"/>
+      <path d="M20 10 C20 10 14 14 14 22" stroke="#5a9a30" stroke-width="1" fill="none" opacity="0.5"/>
+    </svg>
+  </div>
+
+  <!-- Leaf burst canvas -->
+  <canvas id="leafBurstCanvas"></canvas>
+
+  <!-- SOUND TOGGLE -->
+  <button id="soundToggle">🔇 Sound</button>
+
+  <!-- SCORE BADGE -->
+  <div id="scoreBadge">🌿 You lost — of 7 remedies</div>
+
+  <!-- ======================================================
+       FRAME 1 — THE COURTYARD (Night Scene)
+  ====================================================== -->
+  <section id="frame-courtyard">
+    <div class="cy-sky"></div>
+    <div class="cy-stars" id="cyStars"></div>
+
+    <!-- Background tree silhouettes -->
+    <div class="cy-trees-bg">
+      <svg viewBox="0 0 1440 400" preserveAspectRatio="xMidYMax meet" width="100%" height="100%" style="position:absolute;bottom:0;left:0;">
+        <g opacity="0.25" fill="#0d1a0d">
+          <polygon points="120,320 140,180 160,320"/><polygon points="140,320 165,150 190,320"/><polygon points="170,320 190,200 210,320"/>
+          <polygon points="1270,320 1290,170 1310,320"/><polygon points="1290,320 1315,145 1340,320"/><polygon points="1310,320 1330,190 1350,320"/>
+          <polygon points="680,320 700,160 720,320"/><polygon points="700,320 725,130 750,320"/>
+        </g>
+        <g opacity="0.5" fill="#071007">
+          <polygon points="0,400 35,180 70,400"/><polygon points="40,400 80,140 120,400"/><polygon points="80,400 120,170 160,400"/>
+          <rect x="52" y="330" width="12" height="70" fill="#050d05"/><rect x="92" y="300" width="14" height="100" fill="#050d05"/>
+          <polygon points="1310,400 1350,160 1390,400"/><polygon points="1350,400 1390,130 1440,400"/><polygon points="1360,400 1400,175 1440,400"/>
+          <rect x="1358" y="310" width="12" height="90" fill="#050d05"/><rect x="1398" y="290" width="14" height="110" fill="#050d05"/>
+          <polygon points="320,400 365,155 410,400"/><polygon points="370,400 405,190 440,400"/>
+          <rect x="378" y="310" width="12" height="90" fill="#050d05"/>
+          <polygon points="1010,400 1055,165 1100,400"/><polygon points="1060,400 1095,185 1130,400"/>
+          <rect x="1068" y="318" width="12" height="82" fill="#050d05"/>
+        </g>
+        <g opacity="0.85" fill="#040a04">
+          <polygon points="-10,400 30,120 70,400"/><rect x="22" y="280" width="16" height="120" fill="#030703"/>
+          <polygon points="180,400 230,90 280,400"/><polygon points="210,400 255,130 300,400"/>
+          <rect x="240" y="260" width="20" height="140" fill="#030703"/><rect x="272" y="295" width="18" height="105" fill="#030703"/>
+          <polygon points="1150,400 1200,95 1250,400"/><polygon points="1185,400 1230,125 1275,400"/>
+          <rect x="1208" y="268" width="20" height="132" fill="#030703"/><rect x="1242" y="293" width="18" height="107" fill="#030703"/>
+          <polygon points="1390,400 1420,130 1450,400"/><rect x="1412" y="285" width="16" height="115" fill="#030703"/>
+        </g>
+        <g opacity="0.7">
+          <circle cx="250" cy="200" r="2" fill="#d4f54a" opacity="0.0"><animate attributeName="opacity" values="0;0.8;0" dur="3s" repeatCount="indefinite" begin="0s"/></circle>
+          <circle cx="480" cy="170" r="2" fill="#d4f54a" opacity="0.0"><animate attributeName="opacity" values="0;0.6;0" dur="4s" repeatCount="indefinite" begin="1.2s"/></circle>
+          <circle cx="960" cy="190" r="2" fill="#d4f54a" opacity="0.0"><animate attributeName="opacity" values="0;0.7;0" dur="3.5s" repeatCount="indefinite" begin="0.7s"/></circle>
+          <circle cx="1100" cy="155" r="1.5" fill="#d4f54a" opacity="0.0"><animate attributeName="opacity" values="0;0.5;0" dur="5s" repeatCount="indefinite" begin="2s"/></circle>
+          <circle cx="700" cy="210" r="2" fill="#c4e840" opacity="0.0"><animate attributeName="opacity" values="0;0.9;0" dur="2.8s" repeatCount="indefinite" begin="1.8s"/></circle>
+        </g>
+      </svg>
+    </div>
+
+    <div class="cy-ground"></div>
+    <div class="cy-wall"></div>
+
+    <!-- Silhouette snap targets (glowing shadows showing where to place) -->
+    <div class="cy-silhouette glow-hint" id="sil-tulsi" style="left:28%; transform:translateX(-50%);">
+      <svg width="80" height="110" viewBox="0 0 80 110">
+        <path d="M25 110 Q20 90 18 72 Q16 55 24 52 L28 52 Q26 38 30 28 Q34 18 40 14 Q46 18 50 28 Q54 38 52 52 L56 52 Q64 55 62 72 Q60 90 55 110Z" fill="white"/>
+      </svg>
+    </div>
+    <div class="cy-silhouette glow-hint" id="sil-matka" style="left:58%; transform:translateX(-50%);">
+      <svg width="72" height="95" viewBox="0 0 72 95">
+        <path d="M36 95 Q10 90 10 65 Q10 45 20 35 Q24 20 36 16 Q48 20 52 35 Q62 45 62 65 Q62 90 36 95Z" fill="white"/>
+        <rect x="30" y="10" width="12" height="10" rx="3" fill="white"/>
+      </svg>
+    </div>
+    <div class="cy-silhouette glow-hint" id="sil-neem" style="left:72%; transform:translateX(-50%);">
+      <svg width="65" height="115" viewBox="0 0 65 115">
+        <ellipse cx="32" cy="38" rx="26" ry="32" fill="white"/>
+        <ellipse cx="20" cy="55" rx="16" ry="22" fill="white"/>
+        <ellipse cx="44" cy="52" rx="16" ry="22" fill="white"/>
+        <rect x="28" y="65" width="9" height="50" rx="3" fill="white"/>
+      </svg>
+    </div>
+
+    <!-- Draggable Plants -->
+    <div class="cy-plant" id="plant-tulsi" style="left:38%; bottom:29%; transform:translateX(-50%);" data-target="sil-tulsi" data-word="0">
+      <svg width="80" height="110" viewBox="0 0 80 110">
+        <path d="M25 110 Q20 90 18 72 Q16 55 24 52 L56 52 Q64 55 62 72 Q60 90 55 110Z" fill="#c1440e"/>
+        <ellipse cx="40" cy="52" rx="18" ry="5" fill="#e8875a"/>
+        <path d="M22 60 Q40 56 58 60" stroke="#a03a0c" stroke-width="1.5" fill="none"/>
+        <line x1="40" y1="51" x2="40" y2="22" stroke="#2d5a1a" stroke-width="3"/>
+        <ellipse cx="40" cy="22" rx="16" ry="20" fill="#2d5a1a" opacity="0.9"/>
+        <ellipse cx="28" cy="32" rx="12" ry="16" fill="#3d7a28" opacity="0.85"/>
+        <ellipse cx="52" cy="30" rx="12" ry="16" fill="#3d7a28" opacity="0.85"/>
+        <ellipse cx="40" cy="12" rx="10" ry="13" fill="#6aaa40" opacity="0.75"/>
+        <line x1="40" y1="14" x2="40" y2="30" stroke="#2d5a1a" stroke-width="0.8" opacity="0.5"/>
+      </svg>
+    </div>
+
+    <div class="cy-plant" id="plant-matka" style="left:48%; bottom:29%; transform:translateX(-50%);" data-target="sil-matka" data-word="1">
+      <svg width="72" height="95" viewBox="0 0 72 95">
+        <path d="M36 90 Q12 85 12 62 Q12 42 22 34 Q26 20 36 16 Q46 20 50 34 Q60 42 60 62 Q60 85 36 90Z" fill="#c1440e"/>
+        <path d="M24 38 Q20 55 24 72" stroke="#e8875a" stroke-width="3" fill="none" opacity="0.5"/>
+        <rect x="30" y="8" width="12" height="12" rx="3" fill="#a03a0c"/>
+        <ellipse cx="36" cy="8" rx="8" ry="4" fill="#c1440e"/>
+        <path d="M58 46 Q70 44 70 52 Q70 60 58 58" fill="none" stroke="#a03a0c" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="30" cy="80" r="2" fill="rgba(100,160,220,0.5)"/>
+        <circle cx="44" cy="84" r="1.5" fill="rgba(100,160,220,0.5)"/>
+      </svg>
+    </div>
+
+    <div class="cy-plant" id="plant-neem" style="left:58%; bottom:29%; transform:translateX(-50%);" data-target="sil-neem" data-word="2">
+      <svg width="65" height="115" viewBox="0 0 65 115">
+        <rect x="28" y="65" width="9" height="50" rx="3" fill="#5c3a0a"/>
+        <ellipse cx="32" cy="38" rx="26" ry="32" fill="#1a4010" opacity="0.9"/>
+        <ellipse cx="16" cy="56" rx="16" ry="22" fill="#2d5a1a" opacity="0.8"/>
+        <ellipse cx="48" cy="54" rx="16" ry="22" fill="#2d5a1a" opacity="0.8"/>
+        <ellipse cx="32" cy="22" rx="16" ry="18" fill="#4a8a2a" opacity="0.65"/>
+        <line x1="32" y1="25" x2="32" y2="55" stroke="#1a4010" stroke-width="1" opacity="0.4"/>
+        <line x1="20" y1="38" x2="44" y2="38" stroke="#1a4010" stroke-width="0.8" opacity="0.3"/>
+      </svg>
+    </div>
+
+    <!-- Hero text (revealed when all plants snap) -->
+    <div class="cy-hero" id="cyHero">
+      <span class="cy-site-name" id="cySiteName">Nuskhe</span>
+      <span class="cy-hero-line" id="heroWord0">She never called it medicine.</span>
+      <span class="cy-hero-sub" id="heroSub">A story about what we forgot to remember</span>
+    </div>
+
+    <div class="cy-drag-hint" id="cyDragHint">↑ place the plants where they belong</div>
+
+    <div class="cy-scroll-cue" id="cyScrollCue">
+      <span class="cy-scroll-leaf">🌿</span>
+      <span>scroll to remember</span>
+    </div>
+  </section>
+
+  <div class="parallax-divider"></div>
+
+  <!-- ======================================================
+       FRAME 1.5 — GENERATION QUIZ
+  ====================================================== -->
+  <section id="frame-quiz">
+    <p class="quiz-eyebrow">Before we begin</p>
+    <h2 class="quiz-title">Which generation are you?</h2>
+    <p class="quiz-sub">Your story of loss begins here</p>
+
+    <div class="quiz-cards">
+      <div class="quiz-card" data-gen="dadi" data-lost="1" onclick="selectGen(this)">
+        <span class="quiz-card-icon">👵</span>
+        <div class="quiz-card-title">Dadi's generation</div>
+        <span class="quiz-card-era">The courtyard era</span>
+        <span class="quiz-card-years">Born before 1960</span>
+        <span class="quiz-card-lost">You lost 1 of 7 remedies</span>
+      </div>
+      <div class="quiz-card" data-gen="mom" data-lost="4" onclick="selectGen(this)">
+        <span class="quiz-card-icon">👩</span>
+        <div class="quiz-card-title">Mom's generation</div>
+        <span class="quiz-card-era">The in-between era</span>
+        <span class="quiz-card-years">Born 1960 – 1985</span>
+        <span class="quiz-card-lost">You lost 4 of 7 remedies</span>
+      </div>
+      <div class="quiz-card" data-gen="us" data-lost="6" onclick="selectGen(this)">
+        <span class="quiz-card-icon">🧑‍💻</span>
+        <div class="quiz-card-title">Our generation</div>
+        <span class="quiz-card-era">The prescription era</span>
+        <span class="quiz-card-years">Born after 1985</span>
+        <span class="quiz-card-lost">You lost 6 of 7 remedies</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="parallax-divider"></div>
+
+  <!-- ======================================================
+       FRAME 2 — TIMELINE BUBBLE PLOT
+  ====================================================== -->
+  <section id="frame-timeline">
+    <div class="timeline-header">
+      <p class="timeline-eyebrow">Across three generations</p>
+      <h2 class="timeline-title">Here's what we forgot</h2>
+      <div class="section-divider"></div>
+      <div class="timeline-counter">
+        <span id="extinctCount">0</span> remedies now extinct from Indian kitchens
+      </div>
+    </div>
+
+    <div class="gen-lanes" id="genLanes">
+
+      <!-- DADI'S LANE -->
+      <div class="gen-lane" id="lane-dadi">
+        <div class="gen-label">
+          <span class="gen-label-main">Dadi's era</span>
+          <span class="gen-label-years">Pre-1960</span>
+        </div>
+        <div class="gen-bubbles">
+          <!-- Bubble: Haldi Doodh | size 80 | full opacity -->
+          <div class="bubble bubble-dadi" style="width:80px;height:80px;opacity:1;">
+            <div class="bubble-inner">🍵</div>
+            <div class="bubble-tooltip">
+              <span class="bubble-tooltip-name">Haldi Doodh</span>
+              <span class="bubble-tooltip-heals">Heals: Cold, inflammation, sleep</span>
+              <span class="bubble-tooltip-quote">"Raat ko so jaoge bete"</span>
+            </div>
+          </div>
+          <!-- Ajwain -->
+          <div class="bubble bubble-dadi" style="width:70px;height:70px;opacity:0.95;">
+            <div class="bubble-inner">🌾</div>
+            <div class="bubble-tooltip">
+              <span class="bubble-tooltip-name">Ajwain + Black Salt</span>
+              <span class="bubble-tooltip-heals">Heals: Digestion, bloating, gas</span>
+              <span class="bubble-tooltip-quote">"Pet dard? Yeh lo."</span>
+            </div>
+          </div>
+          <!-- Tulsi Kadha -->
+          <div class="bubble bubble-dadi" style="width:75px;height:75px;opacity:1;">
+            <div class="bubble-inner">🌿</div>
+            <div class="bubble-tooltip">
+              <span class="bubble-tooltip-name">Tulsi Kadha</span>
+              <span class="bubble-tooltip-heals">Heals: Fever, cough, immunity</span>
+              <span class="bubble-tooltip-quote">"No doctor needed today"</span>
+            </div>
+          </div>
+          <!-- Hing for colic -->
+          <div class="bubble bubble-dadi" style="width:65px;height:65px;opacity:0.9;">
+            <div class="bubble-inner">🫙</div>
+            <div class="bubble-tooltip">
+              <span class="bubble-tooltip-name">Hing Paste</span>
+              <span class="bubble-tooltip-heals">Heals: Infant colic, stomach cramps</span>
+              <span class="bubble-tooltip-quote">"Every baby's first medicine"</span>
+            </div>
+          </div>
+          <!-- Neem -->
+          <div class="bubble bubble-dadi" style="width:72px;height:72px;opacity:0.95;">
+            <div class="bubble-inner">🌱</div>
+            <div class="bubble-tooltip">
+              <span class="bubble-tooltip-name">Neem Leaves</span>
+              <span class="bubble-tooltip-heals">Heals: Skin, infections, blood</span>
+              <span class="bubble-tooltip-quote">"The courtyard pharmacy"</span>
+            </div>
+          </div>
+          <!-- Mulethi -->
+          <div class="bubble bubble-dadi" style="width:60px;height:60px;opacity:0.85;">
+            <div class="bubble-inner">🪵</div>
+            <div class="bubble-tooltip">
+              <span class="bubble-tooltip-name">Mulethi</span>
+              <span class="bubble-tooltip-heals">Heals: Throat, voice, cough</span>
+              <span class="bubble-tooltip-quote">"Chew. Don't swallow."</span>
+            </div>
+          </div>
+          <!-- Methi -->
+          <div class="bubble bubble-dadi" style="width:68px;height:68px;opacity:0.9;">
+            <div class="bubble-inner">🟡</div>
+            <div class="bubble-tooltip">
+              <span class="bubble-tooltip-name">Methi Seeds</span>
+              <span class="bubble-tooltip-heals">Heals: Joints, hair, blood sugar</span>
+              <span class="bubble-tooltip-quote">"Dadi's morning ritual"</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MOM'S LANE -->
+      <div class="gen-lane" id="lane-mom">
+        <div class="gen-label">
+          <span class="gen-label-main">Mom's era</span>
+          <span class="gen-label-years">1960 – 1985</span>
+        </div>
+        <div class="gen-bubbles">
+          <div class="bubble bubble-mom" style="width:80px;height:80px;opacity:0.9;">
+            <div class="bubble-inner">🍵</div>
+            <div class="bubble-tooltip">
+              <span class="bubble-tooltip-name">Haldi Doodh</span>
+              <span class="bubble-tooltip-heals">Heals: Cold, inflammation</span>
+              <span class="bubble-tooltip-quote">"Still made it, but less often"</span>
+            </div>
+          </div>
+          <div class="bubble bubble-mom" style="width:55px;height:55px;opacity:0.55;">
+            <div class="bubble-inner">🌾</div>
+            <div class="bubble-tooltip">
+              <span class="bubble-tooltip-name">Ajwain + Black Salt</span>
+              <span class="bubble-tooltip-heals">Heals: Digestion</span>
+              <span class="bubble-tooltip-quote">"Or just have an Antacid"</span>
+              <span class="extinct-marker">Fading…</span>
+            </div>
+          </div>
+          <div class="bubble bubble-mom" style="width:65px;height:65px;opacity:0.7;">
+            <div class="bubble-inner">🌿</div>
+            <div class="bubble-tooltip">
+              <span class="bubble-tooltip-name">Tulsi Kadha</span>
+              <span class="bubble-tooltip-heals">Heals: Fever, cough</span>
+              <span class="bubble-tooltip-quote">"When Crocin didn't help"</span>
+            </div>
+          </div>
+          <div class="bubble bubble-mom bubble-extinct" style="width:65px;height:65px;">
+            <div class="bubble-inner">🫙</div>
+            <div class="bubble-tooltip">
+              <span class="bubble-tooltip-name">Hing Paste</span>
+              <span class="bubble-tooltip-heals">Mostly replaced by gripe water</span>
+              <span class="extinct-marker">Nearly gone ✕</span>
+            </div>
+          </div>
+          <div class="bubble bubble-mom" style="width:60px;height:60px;opacity:0.5;">
+            <div class="bubble-inner">🌱</div>
+            <div class="bubble-tooltip">
+              <span class="bubble-tooltip-name">Neem Leaves</span>
+              <span class="bubble-tooltip-heals">Heals: Skin</span>
+              <span class="bubble-tooltip-quote">"Ew, it's bitter"</span>
+              <span class="extinct-marker">Fading…</span>
+            </div>
+          </div>
+          <div class="bubble bubble-mom bubble-extinct" style="width:60px;height:60px;">
+            <div class="bubble-inner">🪵</div>
+            <div class="bubble-tooltip">
+              <span class="bubble-tooltip-name">Mulethi</span>
+              <span class="extinct-marker">Replaced by lozenges ✕</span>
+            </div>
+          </div>
+          <div class="bubble bubble-mom" style="width:55px;height:55px;opacity:0.6;">
+            <div class="bubble-inner">🟡</div>
+            <div class="bubble-tooltip">
+              <span class="bubble-tooltip-name">Methi Seeds</span>
+              <span class="bubble-tooltip-heals">Still in the kitchen, rarely used</span>
+              <span class="extinct-marker">Fading…</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- OUR LANE -->
+      <div class="gen-lane" id="lane-us">
+        <div class="gen-label">
+          <span class="gen-label-main">Our era</span>
+          <span class="gen-label-years">Post-1985</span>
+        </div>
+        <div class="gen-bubbles">
+          <div class="bubble bubble-us" style="width:72px;height:72px;opacity:0.7;">
+            <div class="bubble-inner">🍵</div>
+            <div class="bubble-tooltip">
+              <span class="bubble-tooltip-name">Haldi Doodh</span>
+              <span class="bubble-tooltip-heals">Now called "Golden Latte" at cafes</span>
+              <span class="bubble-tooltip-quote">"₹400 at a Starbucks near you"</span>
+            </div>
+          </div>
+          <div class="bubble bubble-us bubble-extinct" style="width:65px;height:65px;">
+            <div class="bubble-inner">🌾</div>
+            <div class="bubble-tooltip">
+              <span class="bubble-tooltip-name">Ajwain + Black Salt</span>
+              <span class="extinct-marker">Google it to find it ✕</span>
+            </div>
+          </div>
+          <div class="bubble bubble-us" style="width:55px;height:55px;opacity:0.4;">
+            <div class="bubble-inner">🌿</div>
+            <div class="bubble-tooltip">
+              <span class="bubble-tooltip-name">Tulsi Kadha</span>
+              <span class="bubble-tooltip-heals">Revived briefly during Covid</span>
+              <span class="extinct-marker">Then forgotten again…</span>
+            </div>
+          </div>
+          <div class="bubble bubble-us bubble-extinct" style="width:65px;height:65px;">
+            <div class="bubble-inner">🫙</div>
+            <div class="bubble-tooltip">
+              <span class="bubble-tooltip-name">Hing Paste</span>
+              <span class="extinct-marker">What's hing? ✕</span>
+            </div>
+          </div>
+          <div class="bubble bubble-us bubble-extinct" style="width:65px;height:65px;">
+            <div class="bubble-inner">🌱</div>
+            <div class="bubble-tooltip">
+              <span class="bubble-tooltip-name">Neem Leaves</span>
+              <span class="extinct-marker">Only in shampoo ads ✕</span>
+            </div>
+          </div>
+          <div class="bubble bubble-us bubble-extinct" style="width:65px;height:65px;">
+            <div class="bubble-inner">🪵</div>
+            <div class="bubble-tooltip">
+              <span class="bubble-tooltip-name">Mulethi</span>
+              <span class="extinct-marker">Forgotten ✕</span>
+            </div>
+          </div>
+          <div class="bubble bubble-us bubble-extinct" style="width:65px;height:65px;">
+            <div class="bubble-inner">🟡</div>
+            <div class="bubble-tooltip">
+              <span class="bubble-tooltip-name">Methi Seeds</span>
+              <span class="extinct-marker">Only as hair mask ✕</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /gen-lanes -->
+
+    <!-- Milestone stamps -->
+    <div class="milestone-row">
+      <div class="milestone-stamp">
+        <span class="milestone-year">1960s</span>
+        <span class="milestone-event">Antibiotic boom reaches India</span>
+      </div>
+      <div class="milestone-stamp">
+        <span class="milestone-year">1970s</span>
+        <span class="milestone-event">Nuclear families replace joint homes</span>
+      </div>
+      <div class="milestone-stamp">
+        <span class="milestone-year">1984</span>
+        <span class="milestone-event">Pharma deregulation in India</span>
+      </div>
+      <div class="milestone-stamp">
+        <span class="milestone-year">2000s</span>
+        <span class="milestone-event">Urban migration, no courtyards</span>
+      </div>
+      <div class="milestone-stamp">
+        <span class="milestone-year">2020</span>
+        <span class="milestone-event">Covid: brief revival of kadha</span>
+      </div>
+    </div>
+
+  </section>
+
+  <div class="parallax-divider"></div>
+
+  <!-- ======================================================
+       FRAME 3 — EASTER EGG CARD FLIP
+  ====================================================== -->
+  <section id="frame-cards">
+    <p class="cards-eyebrow">— the remedies that survived —</p>
+    <h2 class="cards-title">Some of it is still here.</h2>
+    <p class="cards-sub">Hidden. Waiting. Pick a card.</p>
+
+    <div class="cards-grid">
+
+      <!-- Card 1: Haldi Doodh -->
+      <div class="flip-card" onclick="this.classList.toggle('flipped')">
+        <div class="flip-card-inner">
+          <div class="flip-card-front">
+            <span class="card-face-icon">🂠</span>
+            <span class="card-face-label">Recipe from the past</span>
+            <span class="card-face-tap">tap to reveal</span>
+          </div>
+          <div class="flip-card-back">
+            <span class="card-back-icon">🍵</span>
+            <span class="card-back-name">Haldi Doodh</span>
+            <span class="card-back-heals">Cold · Inflammation · Sleep</span>
+            <span class="card-back-how">Warm milk, half tsp turmeric, pinch of black pepper. Drink before bed.</span>
+            <span class="card-back-gen">Dadi's generation · Always</span>
+            <button class="card-share-btn" onclick="shareRemedy(event,'Haldi Doodh — warm milk with turmeric and black pepper before bed. Your dadi knew.')">Share this</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Ajwain -->
+      <div class="flip-card" onclick="this.classList.toggle('flipped')">
+        <div class="flip-card-inner">
+          <div class="flip-card-front">
+            <span class="card-face-icon">🂠</span>
+            <span class="card-face-label">Recipe from the past</span>
+            <span class="card-face-tap">tap to reveal</span>
+          </div>
+          <div class="flip-card-back">
+            <span class="card-back-icon">🌾</span>
+            <span class="card-back-name">Ajwain + Kala Namak</span>
+            <span class="card-back-heals">Digestion · Bloating · Gas</span>
+            <span class="card-back-how">A pinch of ajwain seeds with black salt in warm water. No antacid needed.</span>
+            <span class="card-back-gen">Dadi's generation · After every heavy meal</span>
+            <button class="card-share-btn" onclick="shareRemedy(event,'Ajwain + Kala Namak in warm water — better than any antacid. Nuskhe.')">Share this</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Tulsi Kadha -->
+      <div class="flip-card" onclick="this.classList.toggle('flipped')">
+        <div class="flip-card-inner">
+          <div class="flip-card-front">
+            <span class="card-face-icon">🂠</span>
+            <span class="card-face-label">Recipe from the past</span>
+            <span class="card-face-tap">tap to reveal</span>
+          </div>
+          <div class="flip-card-back">
+            <span class="card-back-icon">🌿</span>
+            <span class="card-back-name">Tulsi Kadha</span>
+            <span class="card-back-heals">Fever · Cough · Immunity</span>
+            <span class="card-back-how">Boil 10 tulsi leaves, ginger, 2 cloves. Strain. Add honey. Sip slowly.</span>
+            <span class="card-back-gen">Every generation · First response to fever</span>
+            <button class="card-share-btn" onclick="shareRemedy(event,'Tulsi Kadha — 10 tulsi leaves, ginger, cloves boiled together. Your first line of defense. Nuskhe.')">Share this</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: Hing -->
+      <div class="flip-card" onclick="this.classList.toggle('flipped')">
+        <div class="flip-card-inner">
+          <div class="flip-card-front">
+            <span class="card-face-icon">🂠</span>
+            <span class="card-face-label">Recipe from the past</span>
+            <span class="card-face-tap">tap to reveal</span>
+          </div>
+          <div class="flip-card-back">
+            <span class="card-back-icon">🫙</span>
+            <span class="card-back-name">Hing Paste</span>
+            <span class="card-back-heals">Colic · Stomach cramps · Nausea</span>
+            <span class="card-back-how">A pinch of hing dissolved in warm water. Rub gently on the navel for infants.</span>
+            <span class="card-back-gen">Dadi's generation · Every baby's first medicine</span>
+            <button class="card-share-btn" onclick="shareRemedy(event,'Hing in warm water — the original colic cure. Every Indian baby knew this. Nuskhe.')">Share this</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 5: Neem -->
+      <div class="flip-card" onclick="this.classList.toggle('flipped')">
+        <div class="flip-card-inner">
+          <div class="flip-card-front">
+            <span class="card-face-icon">🂠</span>
+            <span class="card-face-label">Recipe from the past</span>
+            <span class="card-face-tap">tap to reveal</span>
+          </div>
+          <div class="flip-card-back">
+            <span class="card-back-icon">🌱</span>
+            <span class="card-back-name">Neem Leaves Paste</span>
+            <span class="card-back-heals">Skin · Infections · Blood purifier</span>
+            <span class="card-back-how">Grind fresh neem leaves into paste. Apply to skin or boil and drink the water.</span>
+            <span class="card-back-gen">Dadi's generation · The courtyard pharmacy</span>
+            <button class="card-share-btn" onclick="shareRemedy(event,'Neem leaves — paste for skin, boiled water for blood. The tree in every courtyard was a pharmacy. Nuskhe.')">Share this</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 6: Methi -->
+      <div class="flip-card" onclick="this.classList.toggle('flipped')">
+        <div class="flip-card-inner">
+          <div class="flip-card-front">
+            <span class="card-face-icon">🂠</span>
+            <span class="card-face-label">Recipe from the past</span>
+            <span class="card-face-tap">tap to reveal</span>
+          </div>
+          <div class="flip-card-back">
+            <span class="card-back-icon">🟡</span>
+            <span class="card-back-name">Methi Seeds Water</span>
+            <span class="card-back-heals">Joints · Hair · Blood sugar</span>
+            <span class="card-back-how">Soak 1 tsp methi seeds overnight. Drink the water on an empty stomach at dawn.</span>
+            <span class="card-back-gen">Dadi's morning ritual · Every single day</span>
+            <button class="card-share-btn" onclick="shareRemedy(event,'Methi seeds soaked overnight, drink the water at dawn. Dadi never had joint pain. Nuskhe.')">Share this</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="parallax-divider"></div>
+
+  <!-- ======================================================
+       FRAME 4 — CONTRIBUTION / CONTACT
+  ====================================================== -->
+  <section id="frame-contribution">
+    <div class="contrib-header">
+      <p class="contrib-eyebrow">Your turn</p>
+      <h2 class="contrib-title">What did your Dadi know?</h2>
+      <div class="section-divider"></div>
+      <p class="contrib-sub">Tell us in any language. We'll keep it safe,<br>the way she kept it for you.</p>
+    </div>
+
+    <div class="contrib-form" id="contribForm">
+      <div class="form-field">
+        <label class="form-label" for="remedyName">What's the remedy called?</label>
+        <input class="form-input" id="remedyName" type="text" placeholder="Haldi wali chai, Dadi's special..." />
+      </div>
+      <div class="form-field">
+        <label class="form-label" for="remedyHeals">What did it heal?</label>
+        <input class="form-input" id="remedyHeals" type="text" placeholder="Sardi, pet dard, neend na aana..." />
+      </div>
+      <div class="form-field">
+        <label class="form-label" for="remedyWho">Who taught it to you?</label>
+        <input class="form-input" id="remedyWho" type="text" placeholder="Nani, Dadi, Maa, Bua..." />
+      </div>
+      <div class="form-field">
+        <label class="form-label" for="remedyLang">What language did they say it in?</label>
+        <input class="form-input" id="remedyLang" type="text" placeholder="Hindi, Punjabi, Tamil, Malayalam..." />
+      </div>
+      <div class="form-field">
+        <label class="form-label" for="remedyHow">Tell us how it was made</label>
+        <textarea class="form-textarea" id="remedyHow" placeholder="Just like she told you. No measurements needed."></textarea>
+      </div>
+      <button class="form-submit" onclick="submitRemedy()">Preserve this nuskha →</button>
+    </div>
+
+    <div id="thankYouMsg">
+      <div class="thankyou-icon">🌿</div>
+      <div class="thankyou-title">We've kept it safe.</div>
+      <div class="thankyou-body">The way she kept it for you.<br>Thank you for not letting it disappear.</div>
+    </div>
+
+    <h3 class="garden-title" id="gardenTitle" style="display:none;">The remedies people remembered →</h3>
+    <div class="remedy-garden" id="remedyGarden"></div>
+
+  </section>
+
+  <!-- ============================================================
+       JAVASCRIPT
+  ============================================================ -->
+  <script>
+
+    /* ── CURSOR ── */
+    const cyCursor = document.getElementById('cy-cursor');
+    document.addEventListener('mousemove', e => {
+      cyCursor.style.left = e.clientX + 'px';
+      cyCursor.style.top  = e.clientY + 'px';
+    });
+
+    /* ── STARS ── */
+    const starsContainer = document.getElementById('cyStars');
+    for (let i = 0; i < 80; i++) {
+      const star = document.createElement('div');
+      star.className = 'cy-star';
+      star.style.cssText = `
+        left: ${Math.random() * 100}%;
+        top:  ${Math.random() * 55}%;
+        --dur:   ${2 + Math.random() * 4}s;
+        --delay: ${Math.random() * 4}s;
+        opacity: ${0.2 + Math.random() * 0.6};
+      `;
+      starsContainer.appendChild(star);
+    }
+
+    /* ── LEAF BURST (canvas) ── */
+    const burstCanvas = document.getElementById('leafBurstCanvas');
+    const bCtx = burstCanvas.getContext('2d');
+    burstCanvas.width  = window.innerWidth;
+    burstCanvas.height = window.innerHeight;
+    window.addEventListener('resize', () => {
+      burstCanvas.width  = window.innerWidth;
+      burstCanvas.height = window.innerHeight;
+    });
+
+    let particles = [];
+
+    function createBurst(x, y) {
+      const colors = ['#2d5a1a','#4a8a2a','#6aaa40','#8fbc5a','#3d7a28','#1a4010'];
+      for (let i = 0; i < 22; i++) {
+        const angle = (Math.PI * 2 / 22) * i + (Math.random() - 0.5) * 0.5;
+        const speed = 2 + Math.random() * 5;
+        particles.push({
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 2,
+          size: 5 + Math.random() * 8,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          alpha: 1,
+          rotation: Math.random() * Math.PI * 2,
+          rotSpeed: (Math.random() - 0.5) * 0.2,
+          life: 1,
+        });
+      }
+    }
+
+    function drawLeafParticle(ctx, p) {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rotation);
+      ctx.globalAlpha = p.alpha;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.moveTo(0, -p.size);
+      ctx.quadraticCurveTo(p.size * 0.6, -p.size * 0.3, 0, p.size * 0.8);
+      ctx.quadraticCurveTo(-p.size * 0.6, -p.size * 0.3, 0, -p.size);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    let burstAnimating = false;
+    function animateBurst() {
+      if (particles.length === 0) { burstAnimating = false; return; }
+      burstAnimating = true;
+      bCtx.clearRect(0, 0, burstCanvas.width, burstCanvas.height);
+      particles = particles.filter(p => p.alpha > 0.01);
+      particles.forEach(p => {
+        p.x  += p.vx;
+        p.y  += p.vy;
+        p.vy += 0.15;
+        p.vx *= 0.98;
+        p.rotation += p.rotSpeed;
+        p.alpha -= 0.022;
+        p.life  -= 0.022;
+        drawLeafParticle(bCtx, p);
+      });
+      requestAnimationFrame(animateBurst);
+    }
+
+    /* ── PLANT PUZZLE DRAG & SNAP ── */
+    const SNAP_RADIUS = 80;
+    let snappedCount = 0;
+    const totalPlants = 3;
+
+    const heroWord  = document.getElementById('heroWord0');
+    const heroSub   = document.getElementById('heroSub');
+    const siteName  = document.getElementById('cySiteName');
+    const dragHint  = document.getElementById('cyDragHint');
+    const scrollCue = document.getElementById('cyScrollCue');
+
+    function revealStep(wordIndex) {
+      if (wordIndex === 0) {
+        siteName.style.opacity = '1';
+      }
+      if (snappedCount >= totalPlants) {
+        heroWord.classList.add('word-revealed');
+        heroSub.classList.add('revealed');
+        dragHint.classList.add('hidden');
+        scrollCue.classList.add('visible');
+        createBurst(window.innerWidth / 2, window.innerHeight / 2 - 40);
+        if (!burstAnimating) animateBurst();
+      }
+    }
+
+    function getElCentre(el) {
+      const r = el.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    }
+
+    function makeDraggable(plant) {
+      let dragging = false;
+      let startMX, startMY, startLeft, startBottom;
+      const targetId = plant.dataset.target;
+      const wordIdx  = parseInt(plant.dataset.word);
+      let snapped = false;
+
+      plant.addEventListener('mousedown', e => {
+        if (snapped) return;
+        dragging = true;
+        plant.classList.add('dragging');
+        startMX   = e.clientX;
+        startMY   = e.clientY;
+        const rect = plant.getBoundingClientRect();
+        startLeft  = rect.left;
+        startBottom = window.innerHeight - rect.bottom;
+        e.preventDefault();
+      });
+
+      document.addEventListener('mousemove', e => {
+        if (!dragging) return;
+        const dx = e.clientX - startMX;
+        const dy = e.clientY - startMY;
+        plant.style.left   = (startLeft   + dx) + 'px';
+        plant.style.bottom = (startBottom - dy) + 'px';
+        plant.style.transform = 'none';
+
+        const silhouette = document.getElementById(targetId);
+        const plantC = getElCentre(plant);
+        const silC   = getElCentre(silhouette);
+        const dist   = Math.hypot(plantC.x - silC.x, plantC.y - silC.y);
+        if (dist < SNAP_RADIUS * 1.5) {
+          silhouette.style.opacity = '0.55';
+          silhouette.style.filter  = 'brightness(0.5) sepia(1) saturate(5) hue-rotate(60deg)';
+        } else {
+          silhouette.classList.contains('filled') || (silhouette.style.opacity = '');
+          silhouette.style.filter = '';
+        }
+      });
+
+      document.addEventListener('mouseup', e => {
+        if (!dragging) return;
+        dragging = false;
+        plant.classList.remove('dragging');
+
+        const silhouette = document.getElementById(targetId);
+        const plantC = getElCentre(plant);
+        const silC   = getElCentre(silhouette);
+        const dist   = Math.hypot(plantC.x - silC.x, plantC.y - silC.y);
+
+        if (dist < SNAP_RADIUS) {
+          snapped = true;
+          snappedCount++;
+          plant.classList.add('snapped');
+
+          const silRect    = silhouette.getBoundingClientRect();
+          const parentRect = plant.parentElement.getBoundingClientRect();
+          plant.style.left   = (silRect.left - parentRect.left + silRect.width / 2) + 'px';
+          plant.style.bottom = (parentRect.bottom - silRect.bottom) + 'px';
+          plant.style.transform = 'translateX(-50%)';
+
+          silhouette.classList.add('filled');
+          silhouette.style.opacity = '0';
+
+          createBurst(silC.x, silC.y);
+          if (!burstAnimating) animateBurst();
+
+          revealStep(wordIdx);
+        } else {
+          silhouette.style.opacity = '';
+          silhouette.style.filter  = '';
+        }
+      });
+    }
+
+    document.querySelectorAll('.cy-plant').forEach(makeDraggable);
+
+    // ── SOUND ─────────────────────────────────────────
+    let soundEnabled = false;
+    const soundBtn = document.getElementById('soundToggle');
+
+    // ── QUIZ ──────────────────────────────────────────
+    const scoreBadge = document.getElementById('scoreBadge');
+    function selectGen(card) {
+      document.querySelectorAll('.quiz-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      const lost = card.dataset.lost;
+      const gen  = card.dataset.gen;
+      scoreBadge.textContent = `🌿 You lost ${lost} of 7 remedies`;
+      scoreBadge.classList.add('visible');
+      const lanes = document.querySelectorAll('.gen-lane');
+      lanes.forEach(l => l.classList.remove('active', 'dimmed'));
+      lanes.forEach(l => {
+        if (l.id === 'lane-' + gen) l.classList.add('active');
+        else l.classList.add('dimmed');
+      });
+    }
+
+    // ── EXTINCT COUNTER ───────
+    let extinctSeen = 0;
+    const extinctBubbles = document.querySelectorAll('.bubble-extinct');
+    const extinctEl = document.getElementById('extinctCount');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting && !e.target.dataset.counted) {
+          e.target.dataset.counted = '1';
+          extinctSeen++;
+          extinctEl.textContent = extinctSeen;
+        }
+      });
+    }, { threshold: 0.5 });
+    extinctBubbles.forEach(b => observer.observe(b));
+
+    // ── SHARE REMEDY ──────────────────────────────────
+    function shareRemedy(event, text) {
+      event.stopPropagation();
+      if (navigator.share) {
+        navigator.share({ title: 'Nuskhe', text });
+      } else {
+        navigator.clipboard.writeText(text);
+        const btn = event.target;
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = 'Share this', 2000);
+      }
+    }
+
+    // ── CONTRIBUTION FORM ─────────────────────────────
+    const seedRemedies = [
+      { icon: '🌶️', name: 'Adrak-elaichi chai', person: 'Nani, Lucknow' },
+      { icon: '🍯', name: 'Shahad aur nimbu', person: 'Dadi, Varanasi' },
+      { icon: '🧄', name: 'Lahsun ka taila', person: 'Maa, Amritsar' },
+    ];
+    const garden = document.getElementById('remedyGarden');
+    seedRemedies.forEach(r => addGardenTile(r));
+
+    function addGardenTile({ icon, name, person }) {
+      const tile = document.createElement('div');
+      tile.className = 'garden-tile';
+      tile.innerHTML = `<span class="garden-tile-icon">${icon}</span>
+        <span class="garden-tile-name">${name}</span>
+        <span class="garden-tile-person">from ${person}</span>`;
+      garden.appendChild(tile);
+    }
+
+    function submitRemedy() {
+      const name  = document.getElementById('remedyName').value.trim();
+      const who   = document.getElementById('remedyWho').value.trim();
+      if (!name) return;
+
+      const submissions = JSON.parse(localStorage.getItem('nuskhe_submissions') || '[]');
+      const entry = {
+        name,
+        heals: document.getElementById('remedyHeals').value,
+        who,
+        lang:  document.getElementById('remedyLang').value,
+        how:   document.getElementById('remedyHow').value,
+      };
+      submissions.push(entry);
+      localStorage.setItem('nuskhe_submissions', JSON.stringify(submissions));
+
+      document.getElementById('contribForm').style.display = 'none';
+      document.getElementById('thankYouMsg').classList.add('visible');
+      document.getElementById('gardenTitle').style.display = 'block';
+      addGardenTile({ icon: '🌿', name, person: who || 'a remembered home' });
+    }
+
+    window.addEventListener('load', () => {
+      const saved = JSON.parse(localStorage.getItem('nuskhe_submissions') || '[]');
+      if (saved.length > 0) {
+        document.getElementById('gardenTitle').style.display = 'block';
+        saved.forEach(s => addGardenTile({ icon: '🌿', name: s.name, person: s.who || 'a remembered home' }));
+      }
+    });
+
+    // Wilt cursor when hovering extinct bubbles
+    document.querySelectorAll('.bubble-extinct').forEach(b => {
+      b.addEventListener('mouseenter', () => {
+        cyCursor.classList.add('wilting');
+        setTimeout(() => cyCursor.classList.remove('wilting'), 700);
+      });
+    });
+
+  </script>
+</body>
+</html>
+
